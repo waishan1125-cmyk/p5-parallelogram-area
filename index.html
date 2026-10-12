@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>平行四邊形面積大挑戰｜五邑工商總會學校 FDBWA</title>
+<style>
+  :root{
+    --red:#e5484d; --orange:#f5a623; --green:#3e9c35; --blue:#2f80ed; --purple:#9b51e0;
+    --ink:#33302b; --muted:#8a8378; --cream:#fff8ec; --card:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:"Comic Sans MS","Chalkboard SE","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink); background:var(--cream); min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(229,72,77,.13), transparent 26%),
+      radial-gradient(circle at 86% 12%, rgba(47,128,237,.13), transparent 24%),
+      radial-gradient(circle at 80% 82%, rgba(62,156,53,.13), transparent 26%),
+      radial-gradient(circle at 16% 84%, rgba(155,81,224,.13), transparent 24%);
+  }
+  #app{position:relative; z-index:1; max-width:640px; margin:0 auto; padding:18px 16px 40px;}
+
+  /* banner */
+  .banner{text-align:center; margin-bottom:14px;}
+  .tiles{display:flex; justify-content:center; gap:8px; margin-bottom:8px;}
+  .tiles span{
+    width:44px; height:44px; border-radius:12px; color:#fff; font-weight:bold; font-size:22px;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 5px 0 rgba(0,0,0,.18);
+  }
+  .t1{background:var(--red);} .t2{background:var(--orange);} .t3{background:var(--green);}
+  .t4{background:var(--blue);} .t5{background:var(--purple);}
+  .school{font-size:15px; letter-spacing:2px; color:var(--muted);}
+  .title{
+    margin:12px 0 4px; font-size:26px; text-align:center; color:#d63c41;
+    text-shadow:2px 2px 0 #ffe3c2;
+  }
+  .subtitle{text-align:center; color:var(--muted); font-size:14px; margin-bottom:14px;}
+
+  .card{
+    background:var(--card); border-radius:20px; padding:18px 16px;
+    box-shadow:0 6px 0 #ead9bd; border:3px solid #f3e3c6;
+  }
+
+  .hud{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:8px;}
+  .qcount{font-size:16px; font-weight:bold;}
+  .mute{
+    border:none; background:#fff; border:2px solid #ead9bd; border-radius:12px;
+    width:44px; height:38px; font-size:18px; cursor:pointer; box-shadow:0 3px 0 #ead9bd;
+  }
+  .pips{display:flex; gap:6px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;}
+  .pip{width:14px; height:14px; border-radius:50%; background:#e8dfcd; box-shadow:inset 0 -2px 0 rgba(0,0,0,.08);}
+  .pip.ok{background:var(--green);} .pip.warn{background:var(--orange);}
+
+  .prompt{font-size:18px; line-height:1.55; margin:2px 0 14px;}
+  .prompt .tag{
+    display:inline-block; background:#ffe3c2; color:#b25f00; border-radius:8px;
+    padding:2px 8px; font-size:13px; margin-right:6px; vertical-align:2px;
+  }
+
+  .choices{display:grid; gap:12px;}
+  .opt{
+    border:3px solid #f3e3c6; background:#fffdf7; border-radius:16px; padding:16px 14px;
+    font-size:20px; font-family:inherit; color:var(--ink); cursor:pointer; text-align:left;
+    box-shadow:0 5px 0 #ead9bd; transition:transform .08s;
+  }
+  .opt:active{transform:translateY(3px); box-shadow:0 2px 0 #ead9bd;}
+  .opt.right{background:#e8f7e4; border-color:var(--green); box-shadow:0 5px 0 #9ed492;}
+  .opt.wrong{background:#fdeaea; border-color:var(--red); box-shadow:0 5px 0 #f0a6a8;}
+
+  /* chip ordering */
+  .frow{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .slot{
+    min-width:56px; height:56px; border-radius:12px; border:3px dashed #d9c9a8; background:#fffdf7;
+    display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--muted);
+    cursor:pointer; padding:0 8px;
+  }
+  .slot.filled{border-style:solid; border-color:var(--blue); background:#eaf2fd; color:var(--ink);}
+  .slot.over{border-color:var(--green); background:#e8f7e4; border-style:solid;}
+  .chiprow{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px;}
+  .chip{
+    border:3px solid #f3e3c6; background:#fff; border-radius:12px; padding:10px 14px;
+    font-size:20px; font-family:inherit; cursor:grab; box-shadow:0 4px 0 #ead9bd;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  .chip:active{transform:translateY(3px); box-shadow:0 1px 0 #ead9bd;}
+  .chip.drag{position:fixed; z-index:50; pointer-events:none; transform:translate(-50%,-50%);
+        box-shadow:0 8px 14px rgba(0,0,0,.25); cursor:grabbing;}
+  .actions{display:flex; gap:10px; margin-top:14px;}
+  .abtn{
+    flex:1; border:none; border-radius:16px; padding:14px 10px; font-size:18px; font-family:inherit;
+    font-weight:bold; cursor:pointer;
+  }
+  .go{background:var(--green); color:#fff; box-shadow:0 5px 0 #2c7a25;}
+  .clear{background:#fff; color:var(--muted); border:3px solid #ead9bd; box-shadow:0 5px 0 #ead9bd;}
+  .abtn:active{transform:translateY(3px); box-shadow:none;}
+  .shake{animation:shk .4s;}
+  @keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+  .stars-line{text-align:center; margin:10px 0 2px; font-size:16px; color:var(--muted);}
+
+  /* done */
+  .face{font-size:64px; text-align:center; margin:6px 0;}
+  .done-h{text-align:center; font-size:22px; margin:0 0 6px;}
+  .done-s{text-align:center; color:var(--muted); margin-bottom:12px;}
+  .again{
+    display:block; width:100%; border:none; border-radius:16px; padding:16px; margin-top:14px;
+    background:var(--blue); color:#fff; font-size:20px; font-family:inherit; font-weight:bold;
+    cursor:pointer; box-shadow:0 5px 0 #1f5fb8;
+  }
+  .again:active{transform:translateY(3px); box-shadow:none;}
+  .relist{background:#fffdf7; border:2px dashed #ead9bd; border-radius:14px; padding:12px; margin-top:12px;}
+  .relist h4{margin:0 0 8px; font-size:16px; color:#b25f00;}
+  .relist li{font-size:14.5px; line-height:1.5; margin-bottom:8px;}
+
+  .cf{position:fixed; top:-14px; width:10px; height:14px; border-radius:2px; z-index:5;
+      animation:fall 1.3s ease-in forwards; pointer-events:none;}
+  @keyframes fall{to{transform:translateY(102vh) rotate(540deg); opacity:.2;}}
+
+  @media (prefers-reduced-motion:reduce){
+    .shake{animation:none;} .cf{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="banner">
+    <div class="tiles">
+      <span class="t1">F</span><span class="t2">D</span><span class="t3">B</span>
+      <span class="t4">W</span><span class="t5">A</span>
+    </div>
+    <div class="school">五邑工商總會學校 FDBWA</div>
+  </div>
+  <h1 class="title">平行四邊形面積大挑戰</h1>
+  <div class="subtitle">五年級數學 · 面積公式與公式排序練習（10 題）</div>
+
+  <div class="card">
+    <div class="hud">
+      <div class="qcount" id="qcount">第 1 題 / 10</div>
+      <button class="mute" id="muteBtn" title="讀題開關">🔊</button>
+    </div>
+    <div class="pips" id="pips"></div>
+    <div id="gameArea"></div>
+    <div class="stars-line" id="starsLine"></div>
+  </div>
+  <div id="doneArea" style="display:none"></div>
+</div>
+
+<script>
+"use strict";
+
+const KEY = "fdbwa_p5_parallelogram_stars";
+let cum = +(localStorage.getItem(KEY) || 0);
+let qi = 0, earned = 0, wrongs = [], muted = false;
+
+/* ---------- static question bank (P5 平行四邊形面積) ---------- */
+/* type: "choice" = 四選一計算題; "order" = 公式排序 (點擊卡片→點空格) */
+const BANK = [
+  {type:"order",
+   prompt:"【公式排序】把下面三條公式由左至右排好（點擊卡片，再點空格）：",
+   rows:[["平行四邊形的面積","=","底","×","高"],
+         ["平行四邊形的底","=","面積","÷","高"],
+         ["平行四邊形的高","=","面積","÷","底"]],
+   answer:"平行四邊形的面積 = 底 × 高；平行四邊形的底 = 面積 ÷ 高；平行四邊形的高 = 面積 ÷ 底"},
+  {type:"choice",
+   prompt:"一個平行四邊形的底是 8 cm，高是 5 cm，它的面積是多少？",
+   options:["40 cm²","13 cm²","26 cm²","20 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的底是 12 cm，高是 6 cm，面積是多少？",
+   options:["72 cm²","36 cm²","18 cm²","78 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的底是 20 cm，高是 5 cm，面積是多少？",
+   options:["100 cm²","25 cm²","15 cm²","50 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的面積是 48 cm²，高是 8 cm，底是多少？",
+   options:["6 cm","40 cm","384 cm","12 cm"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的面積是 63 cm²，底是 9 cm，高是多少？",
+   options:["7 cm","54 cm","72 cm","8 cm"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的面積是 64 cm²，高是 8 cm，底是多少？",
+   options:["8 cm","56 cm","72 cm","512 cm"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的底是 15 cm，高是 4 cm，它的面積是多少？",
+   options:["60 cm²","19 cm²","38 cm²","30 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的底是 30 cm，高是 9 cm，它的面積是多少？",
+   options:["270 cm²","39 cm²","21 cm²","90 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的面積是 90 cm²，底是 15 cm，高是多少？",
+   options:["6 cm","75 cm","105 cm","9 cm"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的底是 10 cm，高是 70 mm，面積是多少？（先統一單位）",
+   options:["70 cm²","7 cm²","700 cm²","60 cm²"], n:0},
+  {type:"choice",
+   prompt:"平行四邊形的面積是 56 cm²，高是 7 cm，底是多少？",
+   options:["8 cm","49 cm","63 cm","7 cm"], n:0}
+];
+
+/* ---------- prep: shuffle option order + scramble formula chips once per game ---------- */
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function prep(){
+  return BANK.map(q=>{
+    if(q.type==="choice"){
+      const opts=q.options.slice();
+      shuffle(opts);
+      return Object.assign({},q,{opts, n:opts.indexOf(q.options[q.n])});
+    }
+    const order=q.rows.map(r=>shuffle(r.slice()));
+    const slots=order.map(()=>order[0].map(()=>null));
+    const pool=[];
+    order.forEach((r,ri)=>r.forEach(t=>pool.push({r:ri,t:t})));
+    shuffle(pool);
+    return Object.assign({},q,{order, slots, pool, tried:false});
+  });
+}
+let Q = prep();
+const ROUND = BANK.length;
+
+/* ---------- sound & voice ---------- */
+let ac=null;
+function beep(freqs){
+  if(muted) return;
+  try{
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    freqs.forEach((f,i)=>{
+      const o=ac.createOscillator(), g2=ac.createGain();
+      o.type="triangle"; o.frequency.value=f; g2.gain.value=.14;
+      o.connect(g2); g2.connect(ac.destination);
+      o.start(ac.currentTime+i*.09); o.stop(ac.currentTime+i*.09+.13);
+    });
+  }catch(e){}
+}
+function say(t){
+  if(muted || !window.speechSynthesis) return;
+  try{
+    const u=new SpeechSynthesisUtterance(t); u.lang="zh-HK"; u.rate=.95;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function confetti(){
+  const colors=["#e5484d","#f5a623","#3e9c35","#2f80ed","#9b51e0"];
+  for(let i=0;i<14;i++){
+    const d=document.createElement("div");
+    d.className="cf";
+    d.style.left=(Math.random()*88+4)+"vw";
+    d.style.background=colors[i%5];
+    d.style.animationDelay=(Math.random()*.25)+"s";
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),1500);
+  }
+}
+
+/* ---------- render ---------- */
+const gameArea=document.getElementById("gameArea");
+const doneArea=document.getElementById("doneArea");
+const qcount=document.getElementById("qcount");
+const pips=document.getElementById("pips");
+const starsLine=document.getElementById("starsLine");
+
+function renderPips(){
+  pips.innerHTML="";
+  for(let i=0;i<ROUND;i++){
+    const d=document.createElement("div");
+    d.className="pip"+(i<qi?(Q[i].tried?" warn":" ok"):"");
+    pips.appendChild(d);
+  }
+}
+
+function render(){
+  const q=Q[qi];
+  qcount.textContent = "第 "+(qi+1)+" 題 / 10";
+  renderPips();
+  let h='<div class="prompt"><span class="tag">'+(q.type==="order"?"公式排序":"計算")+"</span>"+q.prompt+"</div>";
+
+  if(q.type==="choice"){
+    h+='<div class="choices">';
+    q.opts.forEach((o,i)=>{ h+='<button class="opt" data-n="'+i+'">'+o+"</button>"; });
+    h+="</div>";
+  }else{
+    let sel=q.sel||null;
+    q.rows.forEach((row,ri)=>{
+      h+='<div class="frow">';
+      row.forEach((_,si)=>{
+        const v=q.slots[ri][si];
+        const chosen = sel!==null && sel.r===ri && sel.s===si;
+        h+='<div class="slot'+(v?" filled":"")+(chosen?" sel":"")+'" data-r="'+ri+'" data-s="'+si+'">'+(v||"？")+"</div>";
+      });
+      h+="</div>";
+    });
+    h+='<div class="chiprow">';
+    q.pool.forEach(c=>{ h+='<button class="chip" data-r="'+c.r+'" data-t="'+c.t+'">'+c.t+"</button>"; });
+    h+="</div>";
+    const full=q.slots.every(r=>r.every(s=>s!==null));
+    h+='<div class="actions">'+
+       '<button class="abtn clear" data-act="clear">清除</button>'+
+       (full?'<button class="abtn go" data-act="confirm">確定答案</button>':"")+
+       "</div>";
+  }
+  gameArea.innerHTML=h;
+  starsLine.textContent = "首次答對："+earned+" ⭐／"+ROUND+"　累積："+(cum+earned)+" ⭐";
+  say(q.prompt.replace(/【[^】]*】/,""));
+}
+
+/* ---------- answer flow ---------- */
+function correct(){
+  const q=Q[qi];
+  if(!q.tried) earned++;
+  confetti(); beep([523,659,784]);
+  qi++;
+  if(qi>=ROUND){ done(); return; }
+  setTimeout(render,650);
+}
+function wrong(){
+  const q=Q[qi];
+  q.tried=true;
+  beep([220,165]);
+  gameArea.classList.add("shake");
+  setTimeout(()=>gameArea.classList.remove("shake"),450);
+  if(!wrongs.some(w=>w.i===qi)) wrongs.push({i:qi, prompt:q.prompt, answer:q.answer||q.options[q.n]});
+  renderPips();
+  starsLine.textContent = "首次答對："+earned+" ⭐／"+ROUND+"　累積："+(cum+earned)+" ⭐";
+}
+
+gameArea.addEventListener("click",e=>{
+  const b=e.target.closest ? e.target.closest("[data-n],[data-act],[data-r]") : null;
+  if(!b) return;
+  const q=Q[qi];
+
+  if(b.dataset.act==="clear"){
+    q.slots=q.rows.map(()=>q.rows[0].map(()=>null));
+    q.pool=[]; q.order.forEach((r,ri)=>r.forEach(t=>q.pool.push({r:ri,t:t})));
+    shuffle(q.pool); q.sel=null; render(); return;
+  }
+  if(b.dataset.act==="confirm"){
+    const ok=q.slots.every((row,ri)=>row.every((v,si)=>v===q.rows[ri][si]));
+    if(ok){ correct(); } else {
+      // 放回卡片重排（不算新錯，保留首次機會已失的事實）
+      q.slots=q.rows.map(()=>q.rows[0].map(()=>null));
+      q.pool=[]; q.order.forEach((r,ri)=>r.forEach(t=>q.pool.push({r:ri,t:t})));
+      shuffle(q.pool); q.sel=null;
+      wrong(); render();
+    }
+    return;
+  }
+  if(q.type==="choice" && b.dataset.n!==undefined){
+    const n=+b.dataset.n;
+    Array.from(gameArea.querySelectorAll(".opt")).forEach((el,i)=>{
+      el.classList.toggle("right", i===q.n);
+      el.classList.toggle("wrong", i===n && n!==q.n);
+    });
+    if(n===q.n) correct();
+    else { wrong(); setTimeout(render,700); }
+    return;
+  }
+  if(q.type==="order"){
+    const r=+b.dataset.r;
+    if(b.dataset.t!==undefined){                 // 點卡片 → 放入該行第一個空格
+      const t=b.dataset.t;
+      const ci=q.pool.findIndex(c=>c.r===r&&c.t===t);
+      const si=q.slots[r].indexOf(null);
+      if(ci>=0 && si>=0){ q.slots[r][si]=t; q.pool.splice(ci,1); q.sel=null; render(); }
+      return;
+    }
+    const s=+b.dataset.s;
+    if(q.slots[r][s]!==null){                     // 點已填的格 → 收回卡片
+      q.pool.push({r:r,t:q.slots[r][s]}); q.slots[r][s]=null; q.sel=null; render();
+    }
+  }
+});
+
+/* ---------- drag & drop (pointer events, works on touch + mouse) ---------- */
+let dragChip=null;
+gameArea.addEventListener("pointerdown",e=>{
+  const chip=e.target.closest ? e.target.closest(".chip") : null;
+  if(!chip) return;
+  e.preventDefault();
+  dragChip={r:+chip.dataset.r, t:chip.dataset.t, el:chip};
+  chip.classList.add("drag");
+  chip.style.left=e.clientX+"px";
+  chip.style.top=e.clientY+"px";
+});
+gameArea.addEventListener("pointermove",e=>{
+  if(!dragChip) return;
+  e.preventDefault();
+  dragChip.el.style.left=e.clientX+"px";
+  dragChip.el.style.top=e.clientY+"px";
+  const over=e.target.closest ? e.target.closest(".slot") : null;
+  gameArea.querySelectorAll(".slot").forEach(s=>s.classList.remove("over"));
+  if(over) over.classList.add("over");
+});
+gameArea.addEventListener("pointerup",e=>{
+  if(!dragChip) return;
+  const d=dragChip; dragChip=null;
+  d.el.classList.remove("drag");
+  d.el.style.left=""; d.el.style.top="";
+  gameArea.querySelectorAll(".slot").forEach(s=>s.classList.remove("over"));
+  const q=Q[qi];
+  const slot=e.target.closest ? e.target.closest(".slot") : null;
+  if(slot && q.type==="order"){
+    const r=+slot.dataset.r, s=+slot.dataset.s;
+    const ci=q.pool.findIndex(c=>c.r===d.r&&c.t===d.t);
+    if(ci>=0){
+      const prev=q.slots[r][s];                  // 若該格已有卡片 → 先放回池
+      if(prev!==null) q.pool.push({r:r,t:prev});
+      q.slots[r][s]=d.t; q.pool.splice(ci,1); q.sel=null;
+    }
+  }
+  render();
+});
+
+/* ---------- done screen ---------- */
+function done(){
+  cum+=earned;
+  localStorage.setItem(KEY,String(cum));
+  const face = earned>=9?"🏆":earned>=6?"🌟":"🎈";
+  let h='<div class="card">'+
+    '<div class="face">'+face+"</div>"+
+    '<h3 class="done-h">完成！首次答對 '+earned+" / "+ROUND+" 題</h3>"+
+    '<p class="done-s">累積星星：'+cum+" ⭐</p>";
+  if(wrongs.length){
+    h+='<div class="relist"><h4>📖 需要重溫</h4><ol>';
+    wrongs.forEach(w=>{ h+="<li>"+w.prompt.replace(/【[^】]*】/,"")+"<br>答案："+w.answer+"</li>"; });
+    h+="</ol></div>";
+  }
+  h+='<button class="again" id="againBtn">再玩一次 🔄</button></div>';
+  doneArea.innerHTML=h;
+  doneArea.style.display="block";
+  gameArea.innerHTML="";
+  qcount.textContent="完成！";
+  pips.innerHTML="";
+  starsLine.textContent="";
+  beep([523,659,784,1047]);
+  document.getElementById("againBtn").addEventListener("click",()=>{
+    qi=0; earned=0; wrongs=[]; Q=prep(); doneArea.style.display="none"; render();
+  });
+}
+
+document.getElementById("muteBtn").addEventListener("click",function(){
+  muted=!muted;
+  this.textContent=muted?"🔇":"🔊";
+  if(muted && window.speechSynthesis) window.speechSynthesis.cancel();
+});
+
+render();
+</script>
+</body>
+</html>
